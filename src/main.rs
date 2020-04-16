@@ -17,10 +17,15 @@ mod line_patcher;
 mod query;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-struct PatchFile {
-    file: PathBuf,
+struct Patch {
     search: String,
     replace: String,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct PatchFile {
+    file: PathBuf,
+    change: Vec<Patch>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -52,29 +57,47 @@ fn regex_query_or_die(pattern: &str, replacement: &str, word: bool) -> query::Qu
 }
 
 fn main() -> Result<(), Error> {
+    #[cfg(windows)]
+    colored::control::set_virtual_terminal(true).ok();
     let opt = Opt::from_args();
 
     let config_path = opt.config;
     let config_path = config_path.unwrap_or_else(|| Path::new("config.toml").to_path_buf());
     let config = read_to_string(config_path)?;
     let config: Config = toml::from_str(&config)?;
+    let go = opt.go;
 
     let dt = Utc::now().format("%Y/%m/%d %H:%M").to_string();
-    let gitrev = match Repository::init(".") {
+    let git_rev = match Repository::init(".") {
         Ok(repo) => match repo.revparse_single("HEAD") {
             Ok(reference) => reference.id().to_string(),
-            Err(e) => format!("{:?}", e).to_owned(),
+            Err(e) => {
+                if go {
+                    format!("{:?}", e).to_owned()
+                } else {
+                    "".to_owned()
+                }
+            }
         },
-        Err(e) => format!("{:?}", e).to_owned(),
+        Err(e) => {
+            if go {
+                format!("{:?}", e).to_owned()
+            } else {
+                "".to_owned()
+            }
+        }
     };
 
-    let go = opt.go;
     config.patch.iter().for_each(|f| {
-        let replace = &f.replace;
-        let replace = replace.replace("@date", &dt);
-        let replace = replace.replace("@gitrev", &gitrev);
-        let query = regex_query_or_die(&f.search, &replace, true);
-        let file_patcher = FilePatcher::new(f.file.to_path_buf(), &query);
+        let queries = f.change.iter().map(|p| {
+            let replace = &p.replace;
+            let replace = replace.replace("@date", &dt);
+            let replace = replace.replace("@gitrev", &git_rev);
+            let query = regex_query_or_die(&p.search, &replace, true);
+            query
+        }).collect();
+        let file = f.file.canonicalize().unwrap();
+        let file_patcher = FilePatcher::new(file, &queries);
         if let Err(err) = &file_patcher {
             println!("{:?}", err);
         }

@@ -1,9 +1,5 @@
 use crate::query::Query;
-use inflector::cases::camelcase::*;
-use inflector::cases::kebabcase::*;
-use inflector::cases::pascalcase::*;
-use inflector::cases::screamingsnakecase::*;
-use inflector::cases::snakecase::*;
+use inflector::cases::{snakecase::*, pascalcase::*, screamingsnakecase::*, camelcase::*, kebabcase::*};
 
 pub struct LinePatcher {
     input: String,

@@ -1,9 +1,8 @@
 [[patch]]
 file = "D:/ycdivfx/UnityDev/20191129_facebook_camtools/FisheyeLut/Assets/LensTools/Editor/LensToolsEditor.cs"
-search = '(BUILD DATE:) (\d{4}/\d{2}/\d{2} \d{2}:\d{2})'
+[[patch.change]]
+search = 'BUILD DATE: (\d{4}/\d{2}/\d{2} \d{2}:\d{2})'
 replace = "BUILD DATE: @date"
-
-[[patch]]
-file = "D:/ycdivfx/UnityDev/20191129_facebook_camtools/FisheyeLut/Assets/LensTools/Editor/LensToolsEditor.cs"
-search = '(GIT HASH:) (\w+)'
+[[patch.change]]
+search = 'GIT HASH: (\w+)'
 replace = "GIT HASH: @gitrev"
