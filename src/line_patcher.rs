@@ -10,11 +10,10 @@ fn subvert_line(input: &str, pattern: &str, replacement: &str) -> String {
     let res = res.replace(&to_pascal_case(pattern), &to_pascal_case(replacement));
     let res = res.replace(&to_snake_case(pattern), &to_snake_case(replacement));
     let res = res.replace(&to_kebab_case(pattern), &to_kebab_case(replacement));
-    let res = res.replace(
+    res.replace(
         &to_screaming_snake_case(pattern),
         &to_screaming_snake_case(replacement),
-    );
-    res.to_string()
+    )
 }
 
 impl LinePatcher {
@@ -39,7 +38,6 @@ impl LinePatcher {
 mod tests {
     use super::*;
     use crate::query;
-    use regex;
 
     #[test]
     fn test_substring() {

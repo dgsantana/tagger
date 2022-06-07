@@ -1,6 +1,5 @@
 use colored::*;
 use difference::{Changeset, Difference};
-use std;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -15,7 +14,7 @@ pub struct FilePatcher {
 }
 
 impl FilePatcher {
-    pub fn new(path: PathBuf, query: &Vec<Query>) -> Result<FilePatcher, std::io::Error> {
+    pub fn new(path: PathBuf, query: &[Query]) -> Result<FilePatcher, std::io::Error> {
         let mut replacements = vec![];
         let file = File::open(&path)?;
         let reader = BufReader::new(file);
@@ -47,7 +46,7 @@ impl FilePatcher {
             if !patched {
                 new_contents.push_str(&line);
             }
-            new_contents.push_str("\n");
+            new_contents.push('\n');
         }
         Ok(FilePatcher {
             replacements,
@@ -111,7 +110,6 @@ impl Replacement {
 
 #[cfg(test)]
 mod tests {
-    extern crate tempdir;
     use super::*;
     use crate::query;
     use std::fs;
@@ -119,29 +117,35 @@ mod tests {
     #[test]
     fn test_compute_replacements() {
         let top_path = std::path::Path::new("tests/data/top.txt");
-        let file_patcher =
-            FilePatcher::new(top_path.to_path_buf(), &vec![query::substring("old", "new")]).unwrap();
+        let file_patcher = FilePatcher::new(
+            top_path.to_path_buf(),
+            &[query::substring("old", "new")],
+        )
+        .unwrap();
         let replacements = file_patcher.replacements();
         assert_eq!(replacements.len(), 1);
         let actual_replacement = &replacements[0];
         assert_eq!(actual_replacement.line_no, 2);
-        // ruplacer preserves line endings: on Windows, there is a
+        // replacer preserves line endings: on Windows, there is a
         // possibility the actual lines contain \r, depending
         // of the git configuration.
         // So strip the \r before comparing them to the expected result.
-        let actual_new = actual_replacement.new.replace("\r", "");
-        let actual_old = actual_replacement.old.replace("\r", "");
+        let actual_new = actual_replacement.new.replace('\r', "");
+        let actual_old = actual_replacement.old.replace('\r', "");
         assert_eq!(actual_new, "Top: new is nice");
         assert_eq!(actual_old, "Top: old is nice");
     }
 
     #[test]
     fn test_patch_file() {
-        let temp_dir = tempdir::TempDir::new("test-ruplacer").unwrap();
+        let temp_dir = tempdir::TempDir::new("test-replacer").unwrap();
         let file_path = temp_dir.path().join("foo.txt");
         fs::write(&file_path, "first line\nI say: old is nice\nlast line\n").unwrap();
-        let file_patcher =
-            FilePatcher::new(file_path.to_path_buf(), &vec![query::substring("old", "new")]).unwrap();
+        let file_patcher = FilePatcher::new(
+            file_path.to_path_buf(),
+            &[query::substring("old", "new")],
+        )
+        .unwrap();
         file_patcher.run().unwrap();
         let actual = fs::read_to_string(&file_path).unwrap();
         let expected = "first line\nI say: new is nice\nlast line\n";
@@ -151,7 +155,7 @@ mod tests {
     #[test]
     fn test_replacement_display() {
         // This test cannot fail. It's just here so you can tweak the look and feel
-        // of ruplacer easily.
+        // of replacer easily.
         let replacement = Replacement {
             line_no: 1,
             old: "trustchain_creation: 0".to_owned(),

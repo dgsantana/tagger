@@ -2,6 +2,7 @@ use chrono::prelude::*;
 use colored::*;
 use file_patcher::FilePatcher;
 use git2::Repository;
+use query::Query;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -11,7 +12,6 @@ use std::{
     process,
 };
 use structopt::StructOpt;
-use toml;
 
 mod file_patcher;
 mod line_patcher;
@@ -114,23 +114,21 @@ fn main() -> Result<(), Error> {
     replacement.insert("@gitbranch", git_branch);
 
     config.patch.iter().for_each(|f| {
-        let queries = f
+        let queries: Vec<Query> = f
             .change
             .iter()
             .map(|p| {
                 let mut replace = (&p.replace).to_string();
                 replacement.iter().for_each(|(k, v)| {
-                    replace = replace.replace(k, &v);
+                    replace = replace.replace(k, v);
                 });
-                // let replace = replace.replace("@date", &dt);
-                // let replace = replace.replace("@gitrev", &git_rev);
                 regex_query_or_die(&p.search, &replace, true)
             })
             .collect();
         let file = f.file.canonicalize().unwrap();
         let file_patcher = FilePatcher::new(file, &queries);
         if let Err(err) = &file_patcher {
-            println!("{:?}", err);
+            eprintln!("{:?}", err);
         }
         let file_patcher = file_patcher.unwrap();
         let replacements = file_patcher.replacements();
