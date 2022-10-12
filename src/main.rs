@@ -118,7 +118,7 @@ fn main() -> Result<(), Error> {
             .change
             .iter()
             .map(|p| {
-                let mut replace = (&p.replace).to_string();
+                let mut replace = p.replace.to_string();
                 replacement.iter().for_each(|(k, v)| {
                     replace = replace.replace(k, v);
                 });
