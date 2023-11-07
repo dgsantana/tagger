@@ -65,7 +65,8 @@ fn main() -> Result<(), Error> {
     let config_path = opt.config;
     let config_path = config_path.unwrap_or_else(|| Path::new("config.toml").to_path_buf());
     let config = read_to_string(config_path)?;
-    let config: Config = toml::from_str(&config)?;
+    let config: Config =
+        toml::from_str(&config).map_err(|e| Error::new(std::io::ErrorKind::Other, e))?;
     let go = opt.go;
 
     let dt = Utc::now().format("%Y/%m/%d %H:%M").to_string();
